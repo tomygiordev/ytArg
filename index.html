@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Y2K MP3 RIPPER v1.0</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        /* ── KEYFRAMES ─────────────────────────────── */
+        @keyframes holo   { 0%{filter:hue-rotate(0deg)} 100%{filter:hue-rotate(360deg)} }
+        @keyframes scanln { 0%{top:-60px} 100%{top:100%} }
+        @keyframes spin   { to{transform:rotate(360deg)} }
+        @keyframes float  { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+        @keyframes sway   { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
+        @keyframes march  { from{transform:translateX(100%)} to{transform:translateX(-100%)} }
+        @keyframes glitch {
+            0%,88%,100%{text-shadow:2px 0 #FF1493,-2px 0 #00FFFF;transform:none}
+            90%{text-shadow:5px 0 #FF1493,-5px 0 #00FFFF;transform:skewX(-4deg)}
+            93%{text-shadow:-4px 0 #FF1493,4px 0 #00FFFF;transform:skewX(3deg)}
+        }
+        @keyframes progPulse {
+            0%,100%{box-shadow:0 0 6px #00FFFF}
+            50%{box-shadow:0 0 18px #00FFFF,0 0 30px #00FFFF}
+        }
+
+        /* ── ROOT ───────────────────────────────────── */
+        :root {
+            --pink:    #FF1493;
+            --pink2:   #FF69B4;
+            --green:   #00FF41;
+            --greend:  #00AA2A;
+            --cyan:    #00FFFF;
+            --orange:  #FF6600;
+            --yellow:  #FFE000;
+            --chrome:  #D0D0D0;
+            --chhi:    #F2F2F2;
+            --chlo:    #7A7A7A;
+            --term:    #000D00;
+        }
+
+        /* ── FULL WINDOW LAYOUT ─────────────────────── */
+        html, body {
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: #111;           /* fallback oscuro — sin rainbow visible */
+            font-family: 'Press Start 2P', monospace;
+        }
+
+        /* El wrapper ocupa toda la ventana con look cromado */
+        .app-wrap {
+            width: 100%; height: 100%;
+            display: flex; flex-direction: column;
+            background: linear-gradient(160deg, #E8E8E8 0%, #C8C8C8 40%, #D8D8D8 70%, #B8B8B8 100%);
+            /* spikes arriba y abajo como patrón CSS */
+            border-top:    10px solid transparent;
+            border-bottom: 10px solid transparent;
+            position: relative;
+        }
+        /* tope de spikes top/bottom con clip */
+        .app-wrap::before {
+            content:'';
+            position:absolute; inset:0;
+            background:
+                linear-gradient(135deg,var(--chhi) 25%,transparent 25%) top/18px 10px repeat-x,
+                linear-gradient(225deg,var(--chhi) 25%,transparent 25%) top/18px 10px repeat-x,
+                linear-gradient(315deg,var(--chhi) 25%,transparent 25%) bottom/18px 10px repeat-x,
+                linear-gradient(45deg, var(--chhi) 25%,transparent 25%) bottom/18px 10px repeat-x;
+            pointer-events:none; z-index:0;
+        }
+
+        /* ── TITLE BAR ─────────────────────────────── */
+        .titlebar {
+            background: linear-gradient(90deg,#AA0055,#FF1493,#FF80C0 50%,#FF1493,#AA0055);
+            padding: 5px 8px;
+            display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 3px solid #880044;
+            -webkit-app-region: drag;
+            position: relative; z-index: 10;
+            flex-shrink: 0;
+        }
+        .tb-btns {
+            display: flex; gap: 3px;
+            -webkit-app-region: no-drag;
+        }
+        .tb-btn {
+            width: 20px; height: 16px;
+            background: linear-gradient(135deg,#F4F4F4,#C0C0C0);
+            border: 2px solid; border-color:#FFF #888 #888 #FFF;
+            font-size: 8px; font-family: 'Press Start 2P', monospace;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; color: #222;
+            -webkit-app-region: no-drag;
+            transition: background .1s;
+        }
+        .tb-btn:hover        { background: #DDD; }
+        .tb-btn:active       { border-color:#888 #FFF #FFF #888; }
+        .tb-btn.close:hover  { background: #FF4444; color:#FFF; }
+        .tb-btn.mini:hover   { background: #FFCC00; }
+        .tb-btn.maxi:hover   { background: #44CC44; }
+        .tb-title {
+            font-size: 9px; color: #FFF; letter-spacing: 1.5px;
+            text-shadow: 1px 1px 0 #880044, 0 0 8px rgba(255,255,255,.5);
+            -webkit-app-region: drag;
+        }
+        .tb-spacer { width: 66px; }
+
+        /* scanline sobre todo */
+        .scanline {
+            position:fixed; left:0; width:100%; height:70px;
+            background:linear-gradient(transparent,rgba(0,255,65,.05),transparent);
+            animation:scanln 5s linear infinite;
+            pointer-events:none; z-index:9999;
+        }
+
+        /* ── MAIN BODY ────────────────────────────── */
+        .win-body {
+            flex: 1; overflow: hidden;
+            padding: 12px 14px 8px;
+            position: relative;
+            /* fondo holográfico contenido dentro de la ventana */
+            background:
+                repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.04) 3px,rgba(255,255,255,.04) 4px),
+                linear-gradient(135deg,
+                    rgba(255,0,180,.28) 0%,
+                    rgba(0,200,255,.28) 22%,
+                    rgba(200,255,0,.2)  44%,
+                    rgba(255,100,0,.25) 66%,
+                    rgba(100,0,255,.25) 88%,
+                    rgba(255,0,180,.28) 100%);
+            background-size: 100% 100%, 400% 400%;
+            animation: sway 7s ease infinite;
+        }
+
+        /* ── HEADER ────────────────────────────────── */
+        .header {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .mascot { font-size: 36px; flex-shrink:0; animation:float 2.5s ease-in-out infinite; filter:drop-shadow(0 0 10px var(--pink)); }
+        .hdr-text { flex:1; }
+        .main-title {
+            font-size: 18px; line-height:1.3;
+            background: linear-gradient(90deg,#FF1493,#FF80C0,#00FFFF,#FF8800,#FF1493);
+            background-size: 300% auto;
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+            animation: sway 2.5s linear infinite, glitch 9s infinite;
+            filter: drop-shadow(0 0 6px rgba(255,20,147,.7));
+        }
+        .sub-title {
+            margin-top: 6px; font-size: 7px;
+            color: #FFF; letter-spacing: 1.5px;
+            text-shadow: 0 0 8px var(--cyan), 1px 1px 0 #000;
+        }
+        .charts { display:flex; flex-direction:column; gap:4px; flex-shrink:0; }
+        .chart {
+            width:80px; height:28px; background:#000; border:1px solid #333; overflow:hidden; position:relative;
+        }
+        .chart::before {
+            content:''; position:absolute; inset:0;
+            background:linear-gradient(90deg,
+                transparent 0,#00FF41 2px,transparent 5px,
+                transparent 16%,#00FF41 19%,transparent 23%,
+                transparent 30%,#00FF41 35%,transparent 40%,
+                transparent 52%,#00FF41 57%,transparent 62%,
+                transparent 68%,#00FF41 73%,transparent 78%,
+                transparent 85%,#00FF41 90%,transparent 95%);
+            opacity:.75;
+        }
+
+        /* ── URL SECTION ────────────────────────────── */
+        .url-section {
+            background: var(--term);
+            border: 3px solid var(--green);
+            padding: 10px 12px; margin-bottom: 10px;
+            box-shadow: 0 0 14px rgba(0,255,65,.35), inset 0 0 20px rgba(0,0,0,.5);
+        }
+        .url-top {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 8px;
+        }
+        .url-lbl {
+            font-size: 9px; color: var(--green);
+            text-shadow: 0 0 8px var(--green), 0 0 15px rgba(0,255,65,.4);
+            letter-spacing: .5px;
+        }
+        .url-wctrl { font-size: 8px; color: #006600; }
+        .url-row   { display:flex; gap:8px; }
+        .t-url {
+            flex:1; background:#000800; border:2px solid #005500;
+            color: var(--green); font-family:'VT323',monospace; font-size:19px;
+            padding:6px 10px; outline:none; caret-color:var(--green);
+        }
+        .t-url::placeholder { color:#004400; }
+        .t-url:focus        { border-color:var(--green); box-shadow:0 0 8px rgba(0,255,65,.4); }
+
+        /* ── BUTTONS general style ─────────────────── */
+        .btn3d {
+            font-family:'Press Start 2P',monospace; cursor:pointer;
+            border:3px solid; transition:transform .08s, box-shadow .08s;
+        }
+        .btn3d:active { transform:translateY(2px) !important; }
+
+        .btn-paste {
+            background:linear-gradient(160deg,#FF80C8,#FF1493,#AA0060);
+            border-color:#FFC0DA #770040 #770040 #FFC0DA;
+            color:#FFF; font-size:8px; padding:8px 12px;
+            text-shadow:1px 1px 0 #770040; box-shadow:3px 3px 0 #770040;
+            line-height:1.8; text-align:center; white-space:nowrap;
+        }
+        .btn-paste:hover  { transform:translateY(-2px); box-shadow:4px 5px 0 #770040; }
+
+        .btn-browse {
+            background:linear-gradient(160deg,#99FF55,#44CC00,#1A7700);
+            border-color:#CCFF99 #0A4400 #0A4400 #CCFF99;
+            color:#001100; font-size:6px; padding:5px 9px;
+            box-shadow:3px 3px 0 #0A4400; text-align:center; line-height:2;
+        }
+        .btn-browse:hover { transform:translateY(-2px); box-shadow:4px 5px 0 #0A4400; }
+
+        /* ── OPTIONS ROW ────────────────────────────── */
+        .options-row {
+            display:grid; grid-template-columns:1fr 1fr;
+            gap:10px; margin-bottom:10px;
+        }
+        .opt-panel {
+            background:rgba(0,0,0,.4);
+            border:2px solid rgba(255,255,255,.3);
+            padding:8px 10px;
+            backdrop-filter: blur(2px);
+        }
+        .opt-lbl {
+            display:block; font-size:8px; color:var(--yellow);
+            text-shadow:0 0 8px var(--yellow),1px 1px 0 #000;
+            margin-bottom:7px; letter-spacing:.5px;
+        }
+        /* quality */
+        .q-box {
+            background:linear-gradient(135deg,#EED888,#C89020,#EED888);
+            border:3px solid; border-color:#FFF0A0 #7A5500 #7A5500 #FFF0A0;
+            padding:6px 8px; display:flex; align-items:center; gap:8px;
+        }
+        .cd { font-size:20px; animation:spin 5s linear infinite; display:inline-block; }
+        .q-box select {
+            flex:1; background:transparent; border:none; outline:none;
+            font-family:'Press Start 2P',monospace; font-size:7px;
+            color:#3D1F00; cursor:pointer; -webkit-appearance:none;
+        }
+        .q-box select option { background:#D4A040; }
+        /* folder */
+        .f-row { display:flex; gap:4px; }
+        .f-path {
+            flex:1; min-width:0; background:#000800; border:2px solid #005500;
+            color:var(--green); font-family:'VT323',monospace; font-size:15px;
+            padding:5px 7px; outline:none;
+            overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+        }
+        .f-path::placeholder { color:#003300; }
+
+        /* ── PROGRESS ──────────────────────────────── */
+        .prog-wrap   { display:none; margin-bottom:10px; }
+        .prog-wrap.active { display:block; }
+        .prog-labels {
+            display:flex; justify-content:space-between;
+            font-size:8px; color:var(--cyan);
+            text-shadow:0 0 8px var(--cyan); margin-bottom:5px;
+        }
+        .prog-track {
+            height:16px; background:#001122; border:2px solid #006688;
+            position:relative; overflow:hidden;
+            animation:progPulse 2s ease-in-out infinite;
+        }
+        .prog-fill {
+            height:100%; width:0%; transition:width .4s ease;
+            background:linear-gradient(90deg,#00FFFF,#00FF88,#00FFFF);
+            background-size:200% 100%; animation:sway 1s linear infinite;
+            box-shadow:0 0 10px var(--cyan);
+        }
+        .prog-track::after {
+            content:''; position:absolute; inset:0;
+            background:repeating-linear-gradient(90deg,transparent,transparent 9px,rgba(0,0,0,.2) 9px,rgba(0,0,0,.2) 11px);
+        }
+        .status-msg { display:none; margin-top:6px; font-size:7px; padding:6px 10px; line-height:1.8; }
+        .status-msg.show   { display:block; }
+        .status-msg.info   { background:rgba(0,255,255,.1);  border:1px solid var(--cyan);  color:var(--cyan);  text-shadow:0 0 5px var(--cyan); }
+        .status-msg.success{ background:rgba(0,255,65,.1);   border:1px solid var(--green); color:var(--green); text-shadow:0 0 5px var(--green); }
+        .status-msg.error  { background:rgba(255,80,80,.1);  border:1px solid #FF5555;      color:#FF5555;      text-shadow:0 0 5px #FF5555; }
+
+        /* ── DOWNLOAD BUTTON ───────────────────────── */
+        .dl-wrap    { position:relative; margin-bottom:8px; }
+        #downloadBtn {
+            width:100%; padding:14px 20px;
+            background:linear-gradient(90deg,#FF3300,#FF8800,#FFCC00,#FF8800,#FF3300);
+            background-size:300% 100%;
+            border:4px solid; border-color:#FFE080 #882200 #882200 #FFE080;
+            border-radius:40px; color:#FFF;
+            font-family:'Press Start 2P',monospace; font-size:13px; letter-spacing:1px;
+            cursor:pointer;
+            text-shadow:2px 2px 0 #882200,0 0 15px rgba(255,180,0,.7);
+            box-shadow:0 6px 0 #882200,0 0 20px rgba(255,120,0,.4);
+            animation:sway 2s linear infinite;
+            transition:transform .1s, box-shadow .1s;
+        }
+        #downloadBtn:hover:not(:disabled) { transform:translateY(-3px); box-shadow:0 9px 0 #882200,0 0 30px rgba(255,120,0,.6); }
+        #downloadBtn:active:not(:disabled){ transform:translateY(4px);  box-shadow:0 2px 0 #882200; border-color:#882200 #FFE080 #FFE080 #882200; }
+        #downloadBtn:disabled              { opacity:.55; cursor:not-allowed; }
+
+        .mascot-l { position:absolute; left:12px; top:50%; transform:translateY(-50%); font-size:22px; animation:float 3s ease-in-out infinite; filter:drop-shadow(0 0 5px var(--cyan)); pointer-events:none; }
+        .mascot-r { position:absolute; right:12px;top:50%; transform:translateY(-50%); font-size:22px; animation:float 3.5s ease-in-out infinite; filter:drop-shadow(0 0 5px var(--pink)); pointer-events:none; }
+
+        #cancelBtn {
+            display:none; position:absolute; right:50px; top:50%; transform:translateY(-50%);
+            background:linear-gradient(135deg,#FF5555,#CC0000);
+            border:2px solid; border-color:#FF9999 #660000 #660000 #FF9999;
+            color:#FFF; font-family:'Press Start 2P',monospace; font-size:6px;
+            padding:5px 8px; cursor:pointer; box-shadow:2px 2px 0 #660000;
+        }
+        #cancelBtn.show { display:block; }
+        #cancelBtn:hover{ background:linear-gradient(135deg,#FF7777,#EE0000); }
+
+        /* ── DOWNLOADS PANEL ───────────────────────── */
+        .dl-panel {
+            background:#000D00;
+            border:3px solid var(--greend);
+            box-shadow:0 0 12px rgba(0,255,65,.2),inset 0 0 20px rgba(0,0,0,.5);
+        }
+        .dl-head {
+            background:#001500; padding:6px 12px;
+            display:flex; justify-content:space-between; align-items:center;
+            border-bottom:1px solid #005500;
+        }
+        .dl-head-txt { font-size:8px; color:var(--green); text-shadow:0 0 8px var(--green); }
+        .dl-star     { font-size:14px; }
+        .dl-list {
+            padding:5px 8px; max-height:85px; overflow-y:auto;
+            scrollbar-width:thin; scrollbar-color:var(--greend) #000D00;
+        }
+        .dl-list::-webkit-scrollbar       { width:5px; }
+        .dl-list::-webkit-scrollbar-track { background:#000D00; }
+        .dl-list::-webkit-scrollbar-thumb { background:var(--greend); }
+        .dl-empty  { font-size:7px; color:#005500; padding:12px 0; text-align:center; }
+        .dl-item   { display:flex; justify-content:space-between; align-items:baseline; padding:5px 2px; border-bottom:1px solid #001800; gap:8px; }
+        .dl-name   { font-family:'VT323',monospace; font-size:16px; color:var(--green); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .dl-name::before { content:'>> '; color:#00AAAA; }
+        .dl-time   { font-size:6px; color:#007755; white-space:nowrap; }
+
+        /* ── TICKER ────────────────────────────────── */
+        .ticker {
+            background:#000; border-top:2px solid var(--pink);
+            height:20px; overflow:hidden; display:flex; align-items:center;
+            flex-shrink:0; position:relative; z-index:10;
+        }
+        .ticker-txt {
+            white-space:nowrap; animation:march 20s linear infinite;
+            font-size:7px; color:var(--pink2); text-shadow:0 0 5px var(--pink);
+        }
+    </style>
+</head>
+<body>
+<div class="scanline"></div>
+<div class="app-wrap">
+
+    <!-- TITLE BAR -->
+    <div class="titlebar">
+        <div class="tb-btns">
+            <div class="tb-btn close" id="closeBtn">✕</div>
+            <div class="tb-btn mini"  id="miniBtn">─</div>
+            <div class="tb-btn maxi"  id="maxiBtn">□</div>
+        </div>
+        <div class="tb-title">Y2K MP3 RIPPER v1.0</div>
+        <div class="tb-spacer"></div>
+    </div>
+
+    <!-- MAIN BODY -->
+    <div class="win-body">
+
+        <!-- HEADER -->
+        <div class="header">
+            <div class="mascot">🎵</div>
+            <div class="hdr-text">
+                <div class="main-title">MP3 SONIC RIPPER</div>
+                <div class="sub-title">EXTRACT AUDIO BEATS FROM WEB-LINKS</div>
+            </div>
+            <div class="charts">
+                <div class="chart"></div>
+                <div class="chart"></div>
+            </div>
+        </div>
+
+        <!-- URL INPUT -->
+        <div class="url-section">
+            <div class="url-top">
+                <span class="url-lbl">HYPER-LINK HERE:</span>
+                <span class="url-wctrl">_ &nbsp; X</span>
+            </div>
+            <div class="url-row">
+                <input type="text" class="t-url" id="urlInput"
+                    placeholder="[https://www.youtube.com/watch?v=...]">
+                <button class="btn3d btn-paste" id="pasteBtn">PEGAR<br>SPIN-PASTE</button>
+            </div>
+        </div>
+
+        <!-- OPTIONS -->
+        <div class="options-row">
+            <div class="opt-panel">
+                <span class="opt-lbl">CALIDAD DE AUDIO</span>
+                <div class="q-box">
+                    <span class="cd">💿</span>
+                    <select id="qualitySelect">
+                        <option value="best">PEAK MP3 (HI-FI)</option>
+                        <option value="320">320 KBPS MAX</option>
+                        <option value="192">192 KBPS MID</option>
+                        <option value="128">128 KBPS LOW</option>
+                    </select>
+                </div>
+            </div>
+            <div class="opt-panel">
+                <span class="opt-lbl">CARPETA DE DESTINO</span>
+                <div class="f-row">
+                    <input type="text" class="f-path" id="outputDir" placeholder="C:\UR-TRAX\...">
+                    <button class="btn3d btn-browse" id="browseBtn">BROWSE<br>THE<br>WEB-NET</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PROGRESS -->
+        <div class="prog-wrap" id="progressSection">
+            <div class="prog-labels">
+                <span id="progressLabel">RIPPING DATA...</span>
+                <span id="progressPercent">0%</span>
+            </div>
+            <div class="prog-track">
+                <div class="prog-fill" id="progressFill"></div>
+            </div>
+            <div class="status-msg" id="statusMessage"></div>
+        </div>
+
+        <!-- DOWNLOAD BUTTON -->
+        <div class="dl-wrap">
+            <span class="mascot-l">👾</span>
+            <button id="downloadBtn">✦ HIT THE RIPP button ✦</button>
+            <button id="cancelBtn">ABORT</button>
+            <span class="mascot-r">🤖</span>
+        </div>
+
+    </div><!-- /win-body -->
+
+    <!-- DOWNLOADS PANEL -->
+    <div class="dl-panel">
+        <div class="dl-head">
+            <span class="dl-head-txt">DESCARGAS COMPLETADAS</span>
+            <span class="dl-star">⭐</span>
+        </div>
+        <div class="dl-list" id="downloadsContainer">
+            <div class="dl-empty" id="emptyMsg">[ NO TRACKS RIPPED YET... ]</div>
+        </div>
+    </div>
+
+    <!-- TICKER -->
+    <div class="ticker">
+        <span class="ticker-txt">
+            ✦ Y2K MP3 RIPPER v1.0 ✦ EXTRACT AUDIO FROM THE WEB-NET ✦ POWERED BY YT-DLP + FFMPEG ✦ PEAK QUALITY RIPPING ✦ ALL FORMATS SUPPORTED ✦ &nbsp;&nbsp;&nbsp;
+        </span>
+    </div>
+
+</div><!-- /app-wrap -->
+
+<script>
+    // ── Refs ──────────────────────────────────────────────
+    const urlInput    = document.getElementById('urlInput');
+    const qualitySel  = document.getElementById('qualitySelect');
+    const outputDir   = document.getElementById('outputDir');
+    const dlBtn       = document.getElementById('downloadBtn');
+    const cancelBtn   = document.getElementById('cancelBtn');
+    const pasteBtn    = document.getElementById('pasteBtn');
+    const browseBtn   = document.getElementById('browseBtn');
+    const progSection = document.getElementById('progressSection');
+    const progFill    = document.getElementById('progressFill');
+    const progLabel   = document.getElementById('progressLabel');
+    const progPct     = document.getElementById('progressPercent');
+    const statusMsg   = document.getElementById('statusMessage');
+    const dlContainer = document.getElementById('downloadsContainer');
+
+    let downloadId = null, downloading = false, progInterval = null;
+
+    // ── Botones de ventana (solo en Electron) ─────────────
+    document.getElementById('closeBtn').addEventListener('click', () => {
+        if (window.electronAPI?.closeWindow) window.electronAPI.closeWindow();
+    });
+    document.getElementById('miniBtn').addEventListener('click', () => {
+        if (window.electronAPI?.minimizeWindow) window.electronAPI.minimizeWindow();
+    });
+    document.getElementById('maxiBtn').addEventListener('click', () => {
+        if (window.electronAPI?.maximizeWindow) window.electronAPI.maximizeWindow();
+    });
+
+    // ── Pegar ─────────────────────────────────────────────
+    pasteBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            urlInput.value = await navigator.clipboard.readText();
+            urlInput.focus();
+        } catch { showStatus('ERROR: NO SE PUEDE ACCEDER AL PORTAPAPELES', 'error'); }
+    });
+
+    // ── Browse ────────────────────────────────────────────
+    browseBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+            if (window.electronAPI?.selectFolder) {
+                const f = await window.electronAPI.selectFolder();
+                if (f) outputDir.value = f;
+            } else {
+                const d = await fetch('/api/default-folder').then(r=>r.json());
+                if (d.path) outputDir.value = d.path;
+            }
+        } catch { showStatus('ERROR AL SELECCIONAR CARPETA', 'error'); }
+    });
+
+    // ── Download ──────────────────────────────────────────
+    dlBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (!urlInput.value.trim()) {
+            showStatus('ERROR: INSERTA UNA HYPER-LINK PRIMERO!', 'error');
+            progSection.classList.add('active');
+            return;
+        }
+        downloading = true;
+        downloadId  = Date.now().toString();
+        dlBtn.disabled = true;
+        cancelBtn.classList.add('show');
+        progSection.classList.add('active');
+        progFill.style.width = '0%';
+        progPct.textContent  = '0%';
+        progLabel.textContent = 'RIPPING DATA...';
+        showStatus('INICIANDO EXTRACCION... PLEASE WAIT', 'info');
+        startProgress();
+
+        try {
+            const res  = await fetch('/api/download', {
+                method:'POST', headers:{'Content-Type':'application/json'},
+                body: JSON.stringify({
+                    url: urlInput.value.trim(),
+                    quality: qualitySel.value,
+                    output:  outputDir.value,
+                    downloadId
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) { resetUI(); showStatus('ERROR: '+(data.error||'DESCARGA FALLIDA'), 'error'); return; }
+
+            clearInterval(progInterval);
+            progFill.style.width  = '100%';
+            progPct.textContent   = '100%';
+            progLabel.textContent = 'RIP COMPLETE!';
+            showStatus('✦ TRACK RIPPED :: '+data.filename, 'success');
+            addToList(data.filename);
+
+            setTimeout(() => {
+                urlInput.value = '';
+                resetUI();
+            }, 4000);
+
+        } catch (err) {
+            resetUI();
+            showStatus('ERROR: SERVIDOR NO RESPONDE. REINICIA LA APP.', 'error');
+        }
+    });
+
+    // ── Cancel ────────────────────────────────────────────
+    cancelBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (downloadId) fetch(`/api/cancel/${downloadId}`, { method:'POST' });
+        resetUI();
+        showStatus('DOWNLOAD ABORTED BY USER', 'error');
+    });
+
+    // ── Helpers ───────────────────────────────────────────
+    function resetUI() {
+        clearInterval(progInterval); progInterval = null;
+        downloading = false; dlBtn.disabled = false;
+        cancelBtn.classList.remove('show');
+        progSection.classList.remove('active');
+    }
+
+    function startProgress() {
+        let p = 5;
+        progInterval = setInterval(() => {
+            p += Math.random() * ((90-p) * 0.15);
+            if (p > 90) p = 90;
+            progFill.style.width  = p + '%';
+            progPct.textContent   = Math.floor(p) + '%';
+        }, 800);
+    }
+
+    function showStatus(msg, type='info') {
+        statusMsg.textContent = msg;
+        statusMsg.className   = `status-msg show ${type}`;
+        if (type === 'success') setTimeout(()=>statusMsg.classList.remove('show'), 6000);
+    }
+
+    function addToList(filename) {
+        const empty = document.getElementById('emptyMsg');
+        if (empty) empty.remove();
+        const el = document.createElement('div');
+        el.className = 'dl-item';
+        el.innerHTML = `<div class="dl-name">${filename.replace(/\.mp3$/i,'')}</div>
+                        <div class="dl-time">[${new Date().toLocaleTimeString()}]</div>`;
+        dlContainer.insertBefore(el, dlContainer.firstChild);
+    }
+
+    // ── Cargar carpeta por defecto ────────────────────────
+    window.addEventListener('load', async () => {
+        try {
+            const d = await fetch('/api/default-folder').then(r=>r.json());
+            if (d.path) outputDir.value = d.path;
+        } catch { outputDir.placeholder = 'C:\\Users\\Downloads'; }
+    });
+</script>
+</body>
+</html>
