@@ -78,6 +78,8 @@
             border-bottom: 3px solid #880044;
             position: relative; z-index: 10;
             flex-shrink: 0;
+            -webkit-app-region: drag;
+            user-select: none;
         }
         .tb-btns {
             display: flex; gap: 3px;
@@ -362,14 +364,14 @@
 <div class="app-wrap">
 
     <!-- TITLE BAR -->
-    <div class="titlebar">
+    <div class="titlebar" data-tauri-drag-region>
         <div class="tb-btns">
             <div class="tb-btn close" id="closeBtn">✕</div>
             <div class="tb-btn mini"  id="miniBtn">─</div>
             <div class="tb-btn maxi"  id="maxiBtn">□</div>
         </div>
-        <div class="tb-title">Y2K MP3 RIPPER v1.0</div>
-        <div class="tb-spacer"></div>
+        <div class="tb-title" data-tauri-drag-region>Y2K MP3 RIPPER v1.0</div>
+        <div class="tb-spacer" data-tauri-drag-region></div>
     </div>
 
     <!-- MAIN BODY -->
