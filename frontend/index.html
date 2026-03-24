@@ -76,7 +76,6 @@
             padding: 5px 8px;
             display: flex; align-items: center; justify-content: space-between;
             border-bottom: 3px solid #880044;
-            -webkit-app-region: drag;
             position: relative; z-index: 10;
             flex-shrink: 0;
         }
@@ -103,8 +102,9 @@
             font-size: 9px; color: #FFF; letter-spacing: 1.5px;
             text-shadow: 1px 1px 0 #880044, 0 0 8px rgba(255,255,255,.5);
             -webkit-app-region: drag;
+            flex: 1; text-align: center;
         }
-        .tb-spacer { width: 66px; }
+        .tb-spacer { width: 66px; -webkit-app-region: drag; }
 
         /* scanline sobre todo */
         .scanline {
@@ -484,15 +484,15 @@
 
     let downloadId = null, downloading = false, progInterval = null;
 
-    // ── Botones de ventana (solo en Electron) ─────────────
+    // ── Botones de ventana (Tauri) ────────────────────────
     document.getElementById('closeBtn').addEventListener('click', () => {
-        if (window.electronAPI?.closeWindow) window.electronAPI.closeWindow();
+        window.__TAURI__.window.getCurrentWindow().close();
     });
     document.getElementById('miniBtn').addEventListener('click', () => {
-        if (window.electronAPI?.minimizeWindow) window.electronAPI.minimizeWindow();
+        window.__TAURI__.window.getCurrentWindow().minimize();
     });
     document.getElementById('maxiBtn').addEventListener('click', () => {
-        if (window.electronAPI?.maximizeWindow) window.electronAPI.maximizeWindow();
+        window.__TAURI__.window.getCurrentWindow().toggleMaximize();
     });
 
     // ── Pegar ─────────────────────────────────────────────
@@ -508,13 +508,8 @@
     browseBtn.addEventListener('click', async (e) => {
         e.preventDefault();
         try {
-            if (window.electronAPI?.selectFolder) {
-                const f = await window.electronAPI.selectFolder();
-                if (f) outputDir.value = f;
-            } else {
-                const d = await fetch('/api/default-folder').then(r=>r.json());
-                if (d.path) outputDir.value = d.path;
-            }
+            const selected = await window.__TAURI__.dialog.open({ directory: true, multiple: false });
+            if (selected) outputDir.value = selected;
         } catch { showStatus('ERROR AL SELECCIONAR CARPETA', 'error'); }
     });
 
@@ -538,17 +533,12 @@
         startProgress();
 
         try {
-            const res  = await fetch('/api/download', {
-                method:'POST', headers:{'Content-Type':'application/json'},
-                body: JSON.stringify({
-                    url: urlInput.value.trim(),
-                    quality: qualitySel.value,
-                    output:  outputDir.value,
-                    downloadId
-                })
+            const data = await window.__TAURI__.core.invoke('download_mp3', {
+                url: urlInput.value.trim(),
+                quality: qualitySel.value,
+                output:  outputDir.value,
+                downloadId
             });
-            const data = await res.json();
-            if (!res.ok) { resetUI(); showStatus('ERROR: '+(data.error||'DESCARGA FALLIDA'), 'error'); return; }
 
             clearInterval(progInterval);
             progFill.style.width  = '100%';
@@ -564,14 +554,14 @@
 
         } catch (err) {
             resetUI();
-            showStatus('ERROR: SERVIDOR NO RESPONDE. REINICIA LA APP.', 'error');
+            showStatus('ERROR: '+(typeof err === 'string' ? err : 'DESCARGA FALLIDA'), 'error');
         }
     });
 
     // ── Cancel ────────────────────────────────────────────
     cancelBtn.addEventListener('click', (e) => {
         e.preventDefault();
-        if (downloadId) fetch(`/api/cancel/${downloadId}`, { method:'POST' });
+        if (downloadId) window.__TAURI__.core.invoke('cancel_download', { downloadId });
         resetUI();
         showStatus('DOWNLOAD ABORTED BY USER', 'error');
     });
@@ -613,8 +603,8 @@
     // ── Cargar carpeta por defecto ────────────────────────
     window.addEventListener('load', async () => {
         try {
-            const d = await fetch('/api/default-folder').then(r=>r.json());
-            if (d.path) outputDir.value = d.path;
+            const folderPath = await window.__TAURI__.core.invoke('get_default_folder');
+            if (folderPath) outputDir.value = folderPath;
         } catch { outputDir.placeholder = 'C:\\Users\\Downloads'; }
     });
 </script>

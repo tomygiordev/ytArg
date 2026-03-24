@@ -8,7 +8,7 @@ const app = express();
 const PORT = 3000;
 
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'frontend')));
 
 // Almacenar descargas activas
 const activeDownloads = new Map();
