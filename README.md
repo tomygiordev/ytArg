@@ -23,7 +23,7 @@ Descarga videos de YouTube como MP3 de alta calidad con una interfaz retro Y2K e
 | **Y2K MP3 Ripper (Portable).exe** | 5.3 MB | Portable (sin instalador) |
 | **Y2K MP3 Ripper_1.0.0_x64_en-US.msi** | 2.3 MB | Instalador MSI (alternativo) |
 
-Descargalos desde la sección [Releases](https://github.com/tomygiordev/ytArg/releases) o desde tu [Desktop]().
+Los 3 ejecutables están disponibles directamente en la carpeta [`/binaries`](./binaries) de este repositorio. También podés descargarlos desde la sección [Releases](https://github.com/tomygiordev/ytArg/releases).
 
 ## Requisitos Previos
 
