@@ -1,208 +1,200 @@
-# 🎵 YouTube MP3 Downloader
+# 🎵 Y2K MP3 RIPPER v1.0
 
-Interfaz moderna y elegante para descargar videos de YouTube como MP3 de alta calidad. Construida con yt-dlp, Express y un diseño dark industrial minimalista.
+Descarga videos de YouTube como MP3 de alta calidad con una interfaz retro Y2K elegante. Construida con **Tauri v2**, **Rust** y diseño dark industrial minimalista.
+
+**Antes:** 347 MB (Electron) → **Ahora:** 1.4 MB (Tauri) ⚡
 
 ## Características
 
-✨ **Interfaz moderna** - Diseño dark elegante con animaciones suaves
+✨ **Interfaz Y2K retro** - Diseño dark elegante con animaciones CRT y holográficas
 🔗 **Pegar URL fácil** - Botón para pegar URLs desde el portapapeles
 🎚️ **Control de calidad** - Selecciona entre mejor calidad, 128/192/320 kbps
-📁 **Carpeta personalizada** - Elige dónde guardar los archivos
+📁 **Carpeta personalizada** - Elige dónde guardar los archivos (folder picker nativo)
 📊 **Progreso en tiempo real** - Barra de progreso y estado de descarga
-💾 **Historial** - Ve tus descargas recientes
-⚡ **Rápido** - Descarga y convierte en paralelo
+💾 **Historial** - Ve tus descargas completadas en la sesión
+⚡ **Ultra liviana** - 1.4 MB, sin dependencias de Node.js
+🖥️ **Portable** - Versión sin instalar disponible
+
+## Descargas
+
+| Versión | Tamaño | Tipo |
+|---------|--------|------|
+| **Y2K MP3 Ripper_1.0.0_x64-setup.exe** | 1.4 MB | Instalador NSIS (recomendado) |
+| **Y2K MP3 Ripper (Portable).exe** | 5.3 MB | Portable (sin instalador) |
+| **Y2K MP3 Ripper_1.0.0_x64_en-US.msi** | 2.3 MB | Instalador MSI (alternativo) |
+
+Descargalos desde la sección [Releases](https://github.com/tomygiordev/ytArg/releases) o desde tu [Desktop]().
 
 ## Requisitos Previos
 
-Necesitas tener instalados:
+### Para usar la app:
 
-### 1. Node.js (v14+)
-Descarga desde https://nodejs.org/
+**Solo necesitas `yt-dlp` instalado:**
 
-### 2. yt-dlp
 ```bash
 pip install yt-dlp
 ```
 
-### 3. ffmpeg
-Necesario para convertir a MP3:
+O descarga el ejecutable directo: https://github.com/yt-dlp/yt-dlp/releases
 
-**Windows (con Chocolatey):**
+**No necesitas:**
+- ❌ Node.js
+- ❌ ffmpeg
+- ❌ Visual Studio Build Tools
+- ❌ Rust
+
+La app es completamente portable y auto-contenida.
+
+### Para desarrollar/compilar:
+
+Necesitas:
+- **Rust**: https://rustup.rs/
+- **Visual Studio Build Tools** (MSVC C++ toolchain)
+- **Node.js v18+**: https://nodejs.org/
+
+## Instalación y Uso
+
+### Opción 1: Instalador (Recomendado)
+
+1. Descarga `Y2K MP3 Ripper_1.0.0_x64-setup.exe`
+2. Ejecuta el instalador
+3. Abre la app desde el Menú Inicio
+
+### Opción 2: Portable
+
+1. Descarga `Y2K MP3 Ripper (Portable).exe`
+2. Ejecuta directamente (sin instalar)
+3. No deja rastro en el sistema
+
+### Opción 3: Desarrollo local
+
 ```bash
-choco install ffmpeg
-```
-
-**Windows (manual):**
-Descarga desde https://ffmpeg.org/download.html y añade a PATH
-
-**macOS:**
-```bash
-brew install ffmpeg
-```
-
-**Linux:**
-```bash
-sudo apt install ffmpeg
-```
-
-## Instalación
-
-1. **Clona o descarga este proyecto**
-```bash
-cd C:\Users\Gime\Desktop\ytArg
-```
-
-2. **Instala dependencias de Node.js**
-```bash
+git clone https://github.com/tomygiordev/ytArg.git
+cd ytArg
 npm install
+npm run dev     # Para desarrollo con hot-reload
+npm run build   # Para compilar versión final
 ```
 
-## Uso
+## Cómo usar
 
-### Iniciar el servidor
+1. **Pega la URL** del video de YouTube (o usa el botón "PEGAR")
+2. **Selecciona calidad** de audio (best, 320, 192, 128 kbps)
+3. **Elige carpeta** de destino (por defecto: Descargas)
+4. **Haz clic en "HIT THE RIPP button"**
+5. **Espera** a que complete (verás el progreso)
 
-```bash
-npm start
+## Arquitectura
+
+Migrado de Electron a Tauri v2 para máxima eficiencia:
+
+```
+Frontend:
+├── frontend/index.html  # UI (HTML/CSS/JS puro, sin frameworks)
+└── Tauri JS APIs       # window, dialog, invoke
+
+Backend (Rust):
+├── src-tauri/src/lib.rs # 3 comandos Tauri
+│   ├── download_mp3()   # Spawn yt-dlp, captura output
+│   ├── cancel_download() # Mata proceso
+│   └── get_default_folder() # Obtiene carpeta descargas
+├── Cargo.toml           # Dependencias Rust
+└── yt-dlp (external)    # Se ejecuta como child process
 ```
 
-Verás:
-```
-🎵 YouTube MP3 Downloader
-Servidor ejecutándose en http://localhost:3000
-
-Requisitos:
-  ✓ yt-dlp instalado (pip install yt-dlp)
-  ✓ ffmpeg instalado (necesario para convertir a MP3)
-```
-
-### Abrir la interfaz
-
-Abre tu navegador en: **http://localhost:3000**
-
-### Descargar un video
-
-1. Pega la URL del video de YouTube (o usa el botón "Pegar")
-2. Selecciona la calidad de audio deseada
-3. Elige la carpeta de destino (por defecto: Descargas)
-4. Haz clic en "Descargar"
-5. Espera a que complete (puedes ver el progreso)
+**No hay servidor Express en la app final.** El backend es código Rust compilado directamente en el ejecutable.
 
 ## Desarrollo
 
-Para modo desarrollo con reinicio automático:
+### Scripts disponibles
 
 ```bash
-npm run dev
+npm run dev              # Inicia dev server con hot-reload (Tauri)
+npm run build            # Compila versión release
+npm run web              # Inicia modo servidor Express alternativo (localhost:3000)
 ```
 
-Necesitarás tener `nodemon` instalado (se incluye en devDependencies).
-
-## Estructura de Archivos
+### Estructura de archivos
 
 ```
 ytArg/
-├── index.html       # Interfaz de usuario (HTML/CSS/JS)
-├── app.js          # Servidor Express + APIs
-├── package.json    # Dependencias de Node.js
-└── README.md       # Este archivo
+├── frontend/
+│   └── index.html            # UI del app
+├── src-tauri/
+│   ├── src/lib.rs            # Backend Rust (comandos)
+│   ├── tauri.conf.json       # Config Tauri
+│   ├── Cargo.toml            # Dependencias Rust
+│   └── icons/                # Iconos de la app
+├── app.js                    # Servidor Express (modo web alternativo)
+├── package.json              # Dependencias Node.js
+└── README.md                 # Este archivo
 ```
 
-## APIs
+### Compilar desde código
 
-### POST /api/download
-Inicia una descarga de YouTube a MP3.
+```bash
+# Instala dependencias
+npm install
 
-**Body:**
-```json
-{
-  "url": "https://www.youtube.com/watch?v=...",
-  "quality": "best",
-  "output": "/ruta/descargas",
-  "downloadId": "1234567890"
-}
+# Inicia modo desarrollo
+npm run dev
+
+# Compila versión final (genera exe)
+npm run build
+
+# Output en: src-tauri/target/release/bundle/nsis/
 ```
-
-**Quality opciones:**
-- `best` - Mejor calidad disponible (recomendado)
-- `192` - 192 kbps
-- `128` - 128 kbps
-- `320` - 320 kbps
-
-**Response:**
-```json
-{
-  "success": true,
-  "filename": "video_title.mp3",
-  "path": "/ruta/completa/video_title.mp3"
-}
-```
-
-### POST /api/cancel/:downloadId
-Cancela una descarga activa.
-
-### GET /api/default-folder
-Obtiene la carpeta de Descargas por defecto.
 
 ## Solución de Problemas
 
-### "No se pudo ejecutar yt-dlp"
-**Solución:** Instala yt-dlp:
+### "yt-dlp no encontrado"
+Instala yt-dlp:
 ```bash
 pip install yt-dlp
 ```
 
-Verifica que está en PATH:
+Verifica:
 ```bash
 yt-dlp --version
 ```
 
-### "ffmpeg no encontrado"
-**Solución:** Instala ffmpeg según tu sistema operativo (ver Requisitos Previos).
+### "No puedo descargar"
+- Verifica tu conexión a internet
+- Asegúrate que la URL sea un video de YouTube válido
+- Revisa que tengas permisos de escritura en la carpeta de destino
 
-Verifica que está en PATH:
-```bash
-ffmpeg -version
-```
+### La app no arranca
+- Reinstala desde el setup.exe
+- Elimina archivos de caché: `%APPDATA%/Y2K MP3 Ripper`
 
-### La descarga se queda pegada
-Cancela con el botón "Cancelar" y revisa los logs en la consola del servidor.
+### Necesito más ayuda
+Abre un issue en GitHub: https://github.com/tomygiordev/ytArg/issues
 
-### El navegador no abre la página
-Asegúrate que el servidor está ejecutándose y accede manualmente a:
-```
-http://localhost:3000
-```
+## Cambios Recientes
 
-## Personalización
-
-### Cambiar puerto del servidor
-En `app.js`, busca `const PORT = 3000` y cámbialo.
-
-### Cambiar colores del diseño
-En `index.html`, modifica las variables CSS en el `:root`:
-```css
---accent: #FF6B35;        /* Color naranja principal */
---bg-dark: #0a0e27;       /* Fondo oscuro */
---success: #4ECDC4;       /* Color éxito */
-```
-
-### Cambiar carpeta por defecto
-En `app.js`, modifica la función `app.get('/api/default-folder', ...)`.
+### v1.0.0 (Actual)
+✅ Migración de Electron a Tauri v2
+✅ Reducción de 347 MB → 1.4 MB
+✅ Backend en Rust compilado
+✅ Ventana sin bordes (frameless)
+✅ Folder picker nativo
+✅ Controles de ventana funcionales
+✅ Versión portable disponible
+✅ Icono personalizado Y2K
 
 ## Licencia
 
-MIT
-
-## Notas
-
-- Las descargas se guardan en MP3 automáticamente
-- Se usa la mejor calidad de audio disponible de YouTube
-- ffmpeg es necesario para la conversión
-- El servidor almacena el historial en la sesión (se pierde al reiniciar)
+MIT - Libre para usar, modificar y distribuir
 
 ## Créditos
 
 Construido con:
+- **Tauri v2** - Framework de escritorio ligero
+- **Rust** - Backend compilado
 - **yt-dlp** - YouTube downloader
-- **Express** - Servidor web
-- **Poppins + JetBrains Mono** - Tipografías
+- **Press Start 2P & VT323** - Tipografías retro Y2K
+- **CSS puro** - Animaciones holográficas y CRT
+
+---
+
+**¿Cansado de apps pesadas? Y2K MP3 Ripper te da funcionalidad de 347 MB en solo 1.4 MB.** 🚀
