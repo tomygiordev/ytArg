@@ -2,7 +2,7 @@
 
 Descarga videos de YouTube como MP3 de alta calidad con una interfaz retro Y2K elegante. Construida con **Tauri v2**, **Rust** y diseño dark industrial minimalista.
 
-**Antes:** 347 MB (Electron) → **Ahora:** 1.4 MB (Tauri) ⚡
+1.4 MB (Tauri) ⚡
 
 ## Características
 
