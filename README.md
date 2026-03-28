@@ -197,4 +197,4 @@ Construido con:
 
 ---
 
-**¿Cansado de apps pesadas? Y2K MP3 Ripper te da funcionalidad de 347 MB en solo 1.4 MB.** 🚀
+**¿Cansado de apps pesadas? Y2K MP3 Ripper te da funcionalidad en solo 1.4 MB.** 🚀
